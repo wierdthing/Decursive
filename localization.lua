@@ -238,6 +238,8 @@ DCR_SKIP_BY_CLASS_LIST = {
 	["Ancient Hysteria"]   = true,
 	["Ignite Mana"]        = true,
 	["Tainted Mind"]       = true,
+	["Smoke Bomb"]         = true,
+	["Screams of the Past"] = true,
     };
 };
 
