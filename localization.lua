@@ -225,7 +225,7 @@ DCR_SKIP_LIST = {
 	["Songflower Serenade"] = true,
 	["Wyvern Sting"] = true,
 	--["Sanctum Mind Decay"] = true,
-	["Dreamstate"] = true,
+	--["Dreamstate"] = true,
 	["Call of Nightmare"] = true,
 };
 
