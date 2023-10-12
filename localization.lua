@@ -224,7 +224,9 @@ DCR_SKIP_LIST = {
 	["Slip'kik's Savvy"] = true,
 	["Songflower Serenade"] = true,
 	["Wyvern Sting"] = true,
-	["Sanctum Mind Decay"] = true,
+	--["Sanctum Mind Decay"] = true,
+	["Dreamstate"] = true,
+	["Call of Nightmare"] = true,
 };
 
 -- ignore the effect bassed on the class
