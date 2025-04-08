@@ -1566,11 +1566,6 @@ function Dcr_Configure() --{{{
 		    Dcr_println( string.gsub(DCR_SPELL_FOUND, "$s", spellName));
 		end
 
-		--no localization scuffed code for healing instead of decursing
-		if((spellName == "Flash Heal")) then
-			DEFAULT_CHAT_FRAME:AddMessage("flash");
-		end
-
 		-- big ass if statement... due to the way that the different localizations work
 		-- I used to do this more elegantly... but the german WoW broke it
 
