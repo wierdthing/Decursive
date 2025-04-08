@@ -247,3 +247,6 @@ DCR_SKIP_BY_CLASS_LIST = {
     };
 };
 
+DCR_HEAL_INSTEAD_LIST = {
+    ["Surge of Mana"] = true,
+};

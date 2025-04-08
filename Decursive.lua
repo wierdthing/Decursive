@@ -170,6 +170,11 @@ local DCR_SPELL_POISON_2	= {0,"", ""};
 local DCR_SPELL_CURSE		= {0,"", ""};
  DCR_CAN_CURE_CURSE	= false;
 
+local DCR_SPELL_FLASH_HEAL = {0,"", ""};
+local DCR_SPELL_REGROWTH = {0,"", ""};
+local DCR_SPELL_FLASH_OF_LIGHT = {0,"", ""};
+ DCR_CAN_HEAL = false;
+
 local DCR_SPELL_COOLDOWN_CHECK	= {0,"", ""};
 
 -- for the blacklist
@@ -1017,7 +1022,12 @@ function Dcr_ScanUnit( Unit, Index) --{{{
 	    end
 	end
 	-- }}}
-
+	if(DCR_HEAL_INSTEAD_LIST[debuff_name]) then
+		if(DCR_CAN_HEAL) then
+			Dcr_UpdateLiveDisplay(Index, Unit, debuff_params);
+			return true;
+		end
+	end
 	if (debuff_params.debuff_type and debuff_params.debuff_type ~= "") then -- debuff_type can be an empty string
 	    -- // {{{ --
 	    if (debuff_params.debuff_type == DCR_MAGIC and Dcr_Saved.CureMagic) then
@@ -1465,6 +1475,11 @@ function Dcr_Configure() --{{{
     DCR_CAN_CURE_POISON = false;
     DCR_SPELL_CURSE = {0,"", ""};
     DCR_CAN_CURE_CURSE = false;
+	DCR_SPELL_FLASH_HEAL = {0,"", ""};
+	DCR_SPELL_REGROWTH = {0,"", ""};
+	DCR_SPELL_FLASH_OF_LIGHT = {0,"", ""};
+ 	DCR_CAN_HEAL = false;
+
 
 
     Dcr_debug_bis("Configuring Decursive...");
@@ -1508,6 +1523,32 @@ function Dcr_Configure() --{{{
 
 	    Dcr_debug( "Checking spell - "..spellName);
 
+		if (spellName == "Flash Heal" or spellName == "Regrowth" or spellName == "Flash of Light") then
+			DCR_HAS_SPELLS = true
+			DCR_CAN_HEAL = true
+			if (spellName == "Flash Heal") then
+				if (DCR_SPELL_FLASH_HEAL[1] == 0) then
+					DCR_SPELL_FLASH_HEAL[1] = i; DCR_SPELL_FLASH_HEAL[2] = BookType; DCR_SPELL_FLASH_HEAL[3] = spellName;
+				else
+					DCR_SPELL_FLASH_HEAL[1] = i; DCR_SPELL_FLASH_HEAL[2] = BookType; DCR_SPELL_FLASH_HEAL[3] = spellName;
+				end
+			end
+			if (spellName == "Flash of Light") then
+				if (DCR_SPELL_FLASH_OF_LIGHT[1] == 0) then
+					DCR_SPELL_FLASH_OF_LIGHT[1] = i; DCR_SPELL_FLASH_OF_LIGHT[2] = BookType; DCR_SPELL_FLASH_OF_LIGHT[3] = spellName;
+				else
+					DCR_SPELL_FLASH_OF_LIGHT[1] = i; DCR_SPELL_FLASH_OF_LIGHT[2] = BookType; DCR_SPELL_FLASH_OF_LIGHT[3] = spellName;
+				end
+			end
+			if (spellName == "Regrowth") then
+				if (DCR_SPELL_REGROWTH[1] == 0) then
+					DCR_SPELL_REGROWTH[1] = i; DCR_SPELL_REGROWTH[2] = BookType; DCR_SPELL_REGROWTH[3] = spellName;
+				else
+					DCR_SPELL_REGROWTH[1] = i; DCR_SPELL_REGROWTH[2] = BookType; DCR_SPELL_REGROWTH[3] = spellName;
+				end
+			end
+		end
+
 	    if (Dcr_Name_Array[spellName]) then
 		Dcr_debug( "Its one we care about");
 		DCR_HAS_SPELLS = true;
@@ -1523,6 +1564,11 @@ function Dcr_Configure() --{{{
 		Dcr_debug( string.gsub(DCR_SPELL_FOUND, "$s", spellName));
 		if (Dcr_Print_Spell_Found) then
 		    Dcr_println( string.gsub(DCR_SPELL_FOUND, "$s", spellName));
+		end
+
+		--no localization scuffed code for healing instead of decursing
+		if((spellName == "Flash Heal")) then
+			DEFAULT_CHAT_FRAME:AddMessage("flash");
 		end
 
 		-- big ass if statement... due to the way that the different localizations work
@@ -2531,6 +2577,8 @@ function Dcr_CureUnit(Unit)  --{{{
     local Disease_Count = 0;
     local Poison_Count	= 0;
     local Curse_Count	= 0;
+	local needsHealing = false;
+	local healTarget = nil;
 
     local TClass, UClass = UnitClass(Unit);
 
@@ -2573,6 +2621,11 @@ function Dcr_CureUnit(Unit)  --{{{
 	-- }}}
 
 	if (Go_On) then
+		if (DCR_HEAL_INSTEAD_LIST[debuff_name]) then
+			needsHealing = true;
+			healTarget = Unit;
+			break;
+		end
 	    -- it is one we "care" about... lets catalog it -- {{{ --
 	    if (debuff_params.debuff_type and debuff_params.debuff_type ~= "") then
 		if (debuff_params.debuff_type == DCR_MAGIC) then
@@ -2597,6 +2650,10 @@ function Dcr_CureUnit(Unit)  --{{{
 	end
 
     end
+	
+	if (needsHealing and healTarget) then
+		return Dcr_HealInstead(healTarget);
+	end
 
     local res = false;
     local counts = {};
@@ -2832,6 +2889,60 @@ function Dcr_Cast_CureSpell( spellID, Unit, AfflictionType, ClearCurrentTarget) 
 	SpellStopTargeting();
     end
 
+    return true;
+end --}}}
+function Dcr_HealInstead(Unit) --{{{
+	local name = (UnitName(Unit));
+    local healSpellID = 0;
+    local healSpellBook = "";
+    local healSpellName = "";
+    
+    if (Dcr_PlayerClass == DCR_CLASS_PRIEST) then
+        healSpellID = DCR_SPELL_FLASH_HEAL[1];
+        healSpellBook = DCR_SPELL_FLASH_HEAL[2];
+        healSpellName = DCR_SPELL_FLASH_HEAL[3];
+    elseif (Dcr_PlayerClass == DCR_CLASS_DRUID) then
+        healSpellID = DCR_SPELL_REGROWTH[1];
+        healSpellBook = DCR_SPELL_REGROWTH[2];
+        healSpellName = DCR_SPELL_REGROWTH[3];
+    elseif (Dcr_PlayerClass == DCR_CLASS_PALADIN) then
+        healSpellID = DCR_SPELL_FLASH_OF_LIGHT[1];
+        healSpellBook = DCR_SPELL_FLASH_OF_LIGHT[2];
+        healSpellName = DCR_SPELL_FLASH_OF_LIGHT[3];
+    else
+        Dcr_errln("Cannot heal " .. name .. " with special debuff - not a healing class");
+        return false;
+    end
+    
+    if (healSpellID == 0) then
+        Dcr_errln(healSpellName .. " not found in spellbook!");
+        return false;
+    end
+    
+    -- Check for range
+    if (not Dcr_UnitInRange(Unit)) then
+        Dcr_errln(name .. " is out of range for healing!");
+        return false;
+    end
+    
+    -- Clear target if necessary
+    if (UnitIsFriend("player", "target")) then
+        if (not UnitIsUnit("target", Unit)) then
+            ClearTarget();
+        end
+    end
+    
+    Dcr_Casting_Spell_On = Unit;
+    CastSpell(healSpellID, healSpellBook);
+    
+    if (SpellIsTargeting()) then
+        SpellTargetUnit(Unit);
+    end
+    
+    if (SpellIsTargeting()) then
+        SpellStopTargeting();
+    end
+    
     return true;
 end --}}}
 -- }}}
